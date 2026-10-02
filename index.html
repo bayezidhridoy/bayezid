@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>School Management System - Version 1</title>
+<style>
+:root{--primary:#2563eb;--dark:#142033;--bg:#f4f7fb;--card:#fff;--muted:#667085;--danger:#dc2626;--success:#15803d}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Noto Sans Bengali","Segoe UI",sans-serif;background:var(--bg);color:var(--dark)}
+header{background:linear-gradient(135deg,#2563eb,#0f766e);color:#fff;padding:24px 18px}
+header h1{margin:0;font-size:28px} header p{margin:5px 0 0;opacity:.9}
+.container{max-width:1200px;margin:auto;padding:18px}
+.nav{display:flex;gap:8px;overflow:auto;padding:8px 0 16px}
+.nav button{border:0;background:#fff;color:var(--dark);padding:11px 15px;border-radius:10px;cursor:pointer;white-space:nowrap;font-weight:600;box-shadow:0 2px 8px #0000000d}
+.nav button.active{background:var(--primary);color:#fff}
+.page{display:none}.page.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}
+.card{background:var(--card);border-radius:15px;padding:20px;box-shadow:0 5px 18px #14203312;margin-bottom:16px}
+.stat strong{display:block;font-size:30px;color:var(--primary)}
+.stat span{color:var(--muted)}
+h2{margin:5px 0 16px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+label{display:block;font-weight:600;margin-bottom:5px}
+input,select,textarea{width:100%;padding:11px;border:1px solid #d8dee8;border-radius:9px;font:inherit;background:#fff}
+textarea{min-height:85px;resize:vertical}
+.field{margin-bottom:12px}
+.btn{border:0;border-radius:9px;padding:10px 15px;cursor:pointer;font-weight:700;background:var(--primary);color:#fff}
+.btn.secondary{background:#475467}.btn.success{background:var(--success)}.btn.danger{background:var(--danger)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.table-wrap{overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:700px}
+th,td{padding:10px;border-bottom:1px solid #e8ecf2;text-align:left}
+th{background:#f8fafc}
+.search{max-width:450px;margin-bottom:12px}
+.empty{text-align:center;color:var(--muted);padding:25px}
+.notice{padding:12px 15px;background:#fff7ed;border-left:4px solid #f97316;border-radius:8px;color:#7c2d12;margin-bottom:15px}
+footer{text-align:center;color:var(--muted);padding:25px}
+@media(max-width:800px){.cards{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}}
+@media(max-width:480px){.cards{grid-template-columns:1fr}header h1{font-size:23px}.container{padding:12px}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <h1>🏫 School Management System</h1>
+    <p>Version 1 • Student, Admission, Attendance & Result Management</p>
+  </div>
+</header>
+
+<div class="container">
+  <div class="nav">
+    <button class="active" onclick="showPage('dashboard',this)">📊 Dashboard</button>
+    <button onclick="showPage('students',this)">👨‍🎓 Students</button>
+    <button onclick="showPage('admission',this)">📝 Admission</button>
+    <button onclick="showPage('attendance',this)">📅 Attendance</button>
+    <button onclick="showPage('results',this)">📚 Results</button>
+  </div>
+
+  <section id="dashboard" class="page active">
+    <div class="cards">
+      <div class="card stat"><strong id="totalStudents">0</strong><span>মোট ছাত্র</span></div>
+      <div class="card stat"><strong id="totalClasses">0</strong><span>শ্রেণি</span></div>
+      <div class="card stat"><strong id="presentToday">0</strong><span>আজ উপস্থিত</span></div>
+      <div class="card stat"><strong id="newAdmissions">0</strong><span>এই সেশনের ভর্তি</span></div>
+    </div>
+    <div class="card">
+      <h2>স্বাগতম</h2>
+      <p>এই প্রথম সংস্করণে ছাত্র যোগ করা, ছাত্রের তথ্য দেখা/সম্পাদনা/মুছে ফেলা, ভর্তি ফর্ম, উপস্থিতি এবং ফলাফল ব্যবস্থাপনার মৌলিক কাঠামো রাখা হয়েছে।</p>
+      <div class="notice">⚠️ এটি একটি local/demo version। Browser-এর localStorage-এ তথ্য থাকে। গুরুত্বপূর্ণ ছাত্র তথ্যের জন্য পরবর্তী ধাপে secure database ও admin login যুক্ত করা উচিত।</div>
+    </div>
+  </section>
+
+  <section id="students" class="page">
+    <div class="card">
+      <h2>👨‍🎓 ছাত্র তালিকা</h2>
+      <input id="studentSearch" class="search" placeholder="নাম, রোল বা Student ID দিয়ে খুঁজুন..." oninput="renderStudents()">
+      <div class="table-wrap"><table><thead><tr><th>ID</th><th>নাম</th><th>শ্রেণি</th><th>রোল</th><th>অভিভাবক</th><th>মোবাইল</th><th>Action</th></tr></thead>
+      <tbody id="studentTable"></tbody></table></div>
+    </div>
+  </section>
+
+  <section id="admission" class="page">
+    <div class="card">
+      <h2>📝 ভর্তি ফর্ম</h2>
+      <form id="admissionForm">
+        <div class="grid">
+          <div class="field"><label>ছাত্রের নাম *</label><input id="name" required></div>
+          <div class="field"><label>জন্মতারিখ</label><input id="dob" type="date"></div>
+          <div class="field"><label>শ্রেণি *</label><select id="className" required><option value="">নির্বাচন করুন</option><option>প্রথম</option><option>দ্বিতীয়</option><option>তৃতীয়</option><option>চতুর্থ</option><option>পঞ্চম</option><option>ষষ্ঠ</option><option>সপ্তম</option><option>অষ্টম</option><option>নবম</option><option>দশম</option><option>একাদশ</option><option>দ্বাদশ</option></select></div>
+          <div class="field"><label>রোল</label><input id="roll" type="number"></div>
+          <div class="field"><label>পিতার নাম</label><input id="father"></div>
+          <div class="field"><label>মাতার নাম</label><input id="mother"></div>
+          <div class="field"><label>অভিভাবকের মোবাইল</label><input id="phone" type="tel"></div>
+          <div class="field"><label>জন্মনিবন্ধন নম্বর</label><input id="birth"></div>
+          <div class="field"><label>ভর্তি তারিখ</label><input id="admissionDate" type="date"></div>
+          <div class="field"><label>রক্তের গ্রুপ</label><select id="blood"><option value="">নির্বাচন করুন</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select></div>
+        </div>
+        <div class="field"><label>ঠিকানা</label><textarea id="address"></textarea></div>
+        <div class="actions"><button class="btn success" type="submit">💾 Student Save</button><button class="btn secondary" type="reset">Reset</button></div>
+      </form>
+    </div>
+  </section>
+
+  <section id="attendance" class="page">
+    <div class="card">
+      <h2>📅 উপস্থিতি</h2>
+      <div class="grid">
+        <div class="field"><label>তারিখ</label><input id="attDate" type="date"></div>
+        <div class="field"><label>শ্রেণি</label><select id="attClass" onchange="renderAttendance()"><option value="">সব শ্রেণি</option><option>প্রথম</option><option>দ্বিতীয়</option><option>তৃতীয়</option><option>চতুর্থ</option><option>পঞ্চম</option><option>ষষ্ঠ</option><option>সপ্তম</option><option>অষ্টম</option><option>নবম</option><option>দশম</option><option>একাদশ</option><option>দ্বাদশ</option></select></div>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>ID</th><th>নাম</th><th>শ্রেণি</th><th>রোল</th><th>উপস্থিত?</th></tr></thead><tbody id="attendanceTable"></tbody></table></div>
+      <button class="btn success" onclick="saveAttendance()">💾 Save Attendance</button>
+    </div>
+  </section>
+
+  <section id="results" class="page">
+    <div class="card">
+      <h2>📚 ফলাফল</h2>
+      <div class="grid">
+        <div class="field"><label>Student ID</label><input id="resultStudent"></div>
+        <div class="field"><label>বিষয়</label><input id="subject"></div>
+        <div class="field"><label>প্রাপ্ত নম্বর</label><input id="marks" type="number" min="0" max="100"></div>
+        <div class="field"><label>পরীক্ষা</label><input id="exam" placeholder="বার্ষিক পরীক্ষা"></div>
+      </div>
+      <button class="btn success" onclick="saveResult()">💾 Result Save</button>
+      <div class="table-wrap" style="margin-top:18px"><table><thead><tr><th>Student ID</th><th>পরীক্ষা</th><th>বিষয়</th><th>নম্বর</th><th>তারিখ</th></tr></thead><tbody id="resultTable"></tbody></table></div>
+    </div>
+  </section>
+</div>
+
+<footer>© 2026 School Management System • Version 1</footer>
+
+<script>
+const KEY="school_students_v1", ATT="school_attendance_v1", RES="school_results_v1";
+let students=JSON.parse(localStorage.getItem(KEY)||"[]");
+let attendance=JSON.parse(localStorage.getItem(ATT)||"{}");
+let results=JSON.parse(localStorage.getItem(RES)||"[]");
+const today=new Date().toISOString().slice(0,10);
+document.getElementById("admissionDate").value=today;
+document.getElementById("attDate").value=today;
+
+function showPage(id,btn){
+ document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
+ document.getElementById(id).classList.add("active");
+ document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active"));
+ btn.classList.add("active");
+ if(id==="students")renderStudents();
+ if(id==="attendance")renderAttendance();
+ if(id==="results")renderResults();
+ updateDashboard();
+}
+function save(){localStorage.setItem(KEY,JSON.stringify(students));localStorage.setItem(ATT,JSON.stringify(attendance));localStorage.setItem(RES,JSON.stringify(results));updateDashboard();}
+function updateDashboard(){
+ document.getElementById("totalStudents").textContent=students.length;
+ document.getElementById("totalClasses").textContent=[...new Set(students.map(s=>s.className).filter(Boolean))].length;
+ const a=attendance[today]||{}; document.getElementById("presentToday").textContent=Object.values(a).filter(v=>v==="Present").length;
+ document.getElementById("newAdmissions").textContent=students.filter(s=>s.admissionDate&&s.admissionDate.slice(0,4)===String(new Date().getFullYear())).length;
+}
+document.getElementById("admissionForm").addEventListener("submit",e=>{
+ e.preventDefault();
+ const id="STU-"+String(Date.now()).slice(-7);
+ students.push({id,name:name.value,dob:dob.value,className:className.value,roll:roll.value,father:father.value,mother:mother.value,phone:phone.value,birth:birth.value,admissionDate:admissionDate.value,blood:blood.value,address:address.value});
+ save(); alert("Student saved successfully. Student ID: "+id); e.target.reset(); admissionDate.value=today; renderStudents();
+});
+function renderStudents(){
+ const q=(studentSearch.value||"").toLowerCase();
+ const rows=students.filter(s=>[s.id,s.name,s.roll].join(" ").toLowerCase().includes(q));
+ studentTable.innerHTML=rows.length?rows.map(s=>`<tr><td>${esc(s.id)}</td><td>${esc(s.name)}</td><td>${esc(s.className)}</td><td>${esc(s.roll)}</td><td>${esc(s.father)}</td><td>${esc(s.phone)}</td><td><button class="btn" onclick="viewStudent('${s.id}')">View</button> <button class="btn danger" onclick="deleteStudent('${s.id}')">Delete</button></td></tr>`).join(""):`<tr><td colspan="7" class="empty">কোনো ছাত্র পাওয়া যায়নি।</td></tr>`;
+}
+function viewStudent(id){
+ const s=students.find(x=>x.id===id); if(!s)return;
+ alert(`Student ID: ${s.id}\nনাম: ${s.name}\nশ্রেণি: ${s.className}\nরোল: ${s.roll}\nপিতা: ${s.father}\nমাতা: ${s.mother}\nমোবাইল: ${s.phone}\nজন্মনিবন্ধন: ${s.birth}\nরক্তের গ্রুপ: ${s.blood}\nঠিকানা: ${s.address}`);
+}
+function deleteStudent(id){if(confirm("এই ছাত্রের তথ্য মুছে ফেলবেন?")){students=students.filter(s=>s.id!==id);save();renderStudents();}}
+function renderAttendance(){
+ const c=attClass.value; const list=students.filter(s=>!c||s.className===c), day=attendance[attDate.value]||{};
+ attendanceTable.innerHTML=list.length?list.map(s=>`<tr><td>${esc(s.id)}</td><td>${esc(s.name)}</td><td>${esc(s.className)}</td><td>${esc(s.roll)}</td><td><select data-att="${s.id}"><option ${day[s.id]==="Present"?"selected":""}>Present</option><option ${day[s.id]==="Absent"?"selected":""}>Absent</option></select></td></tr>`).join(""):`<tr><td colspan="5" class="empty">আগে ছাত্র যোগ করুন।</td></tr>`;
+}
+function saveAttendance(){
+ const d=attDate.value||today; attendance[d]=attendance[d]||{};
+ document.querySelectorAll("[data-att]").forEach(x=>attendance[d][x.dataset.att]=x.value);
+ save();alert("Attendance saved.");renderAttendance();
+}
+function saveResult(){
+ const sid=resultStudent.value.trim(), st=students.find(s=>s.id===sid);
+ if(!st){alert("Student ID পাওয়া যায়নি।");return}
+ if(!subject.value||marks.value===""){alert("বিষয় ও নম্বর দিন।");return}
+ results.push({studentId:sid,exam:exam.value||"পরীক্ষা",subject:subject.value,marks:marks.value,date:today});
+ save();alert("Result saved.");resultStudent.value="";subject.value="";marks.value="";renderResults();
+}
+function renderResults(){
+ resultTable.innerHTML=results.length?results.slice().reverse().map(r=>`<tr><td>${esc(r.studentId)}</td><td>${esc(r.exam)}</td><td>${esc(r.subject)}</td><td>${esc(r.marks)}</td><td>${esc(r.date)}</td></tr>`).join(""):`<tr><td colspan="5" class="empty">কোনো ফলাফল নেই।</td></tr>`;
+}
+function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
+updateDashboard();renderStudents();renderAttendance();renderResults();
+</script>
+</body>
+</html>
